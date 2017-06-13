@@ -1,5 +1,10 @@
-﻿var totalGold = 1000;
-var prevGold = 1000;
+﻿var totalGold = 30;
+var prevGold = 30;
+
+function Gold() {
+    this.display = displayGold;
+    this.add = addGold;
+}
 
 function displayGold() {
     // Clear the gold display before placing it in canvas.

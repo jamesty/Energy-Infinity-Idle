@@ -1,4 +1,6 @@
-﻿function saveGame() {
+﻿var reset = false;
+
+function saveGame() {
     localStorage.gold = totalGold;
     localStorage.energy = totalEnergy;
     localStorage.research = research;
@@ -48,7 +50,7 @@ function loadGame() {
     if (localStorage.labCount != null) {
         labCount = parseInt(localStorage.labCount);
     }
-    if (localStorage.ampLoc != []) {
+    if (localStorage.ampLoc != null) {
         ampLocations = JSON.parse(localStorage.ampLoc);
     }
     if (localStorage.grid != null) {
@@ -61,25 +63,7 @@ function loadGame() {
 }
 
 function resetGame() {
+    reset = true;
+    localStorage.clear();
     location.reload();
-    localStorage.energy = 0;
-    localStorage.gold = 1000;
-    localStorage.research = 0;
-    localStorage.energyCellCost = 10;
-    localStorage.energySellerCost = 10;
-    localStorage.labCost = 50;
-    localStorage.ampCost = 500;
-    localStorage.energyCellCount = 0;
-    localStorage.sellerCount = 0;
-    localStorage.labCount = 0;
-    localStorage.ampCount = 0;
-    localStorage.ampLoc = [];
-    grid = new Array(24);
-    for (var x = 0; x < grid.length; x++) {
-        grid[x] = new Array(23);
-        for (var y = 0; y < grid[x].length; y++) {
-            grid[x][y] = { building: false };
-        }
-    }
-    localStorage.grid = JSON.stringify(grid);
 }

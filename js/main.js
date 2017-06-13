@@ -2,6 +2,7 @@
 var context;
 var canvasWidth;
 var canvasHeight;
+var canvasRect;
 
 var grid;
 var cellSizeX = 25;
@@ -20,6 +21,7 @@ function init() {
     context = canvas.getContext("2d");
     canvasWidth = canvas.width;
     canvasHeight = canvas.height;
+    canvasRect = canvas.getBoundingClientRect();
     // Check for a saved game and load it if available.
     loadGame();
     createGrid();
@@ -35,8 +37,9 @@ function init() {
     canvas.addEventListener("mousemove", onHover);
     var incrementEnergy = setInterval("gameTick()", 1000);
 
+    // Save the game if the user exits out of the game.
     window.onbeforeunload = function () {
-        if (typeof (Storage) !== "undefined") {
+        if (typeof (Storage) !== "undefined" && !reset) {
             saveGame();
         } else {
             alert("This browser does not support local storage.");
@@ -67,13 +70,7 @@ function createGrid() {
         for (var x = 0; x < grid.length; x++) {
             grid[x] = new Array(23);
             for (var y = 0; y < grid[x].length; y++) {
-                grid[x][y] = {
-                    building: false,
-                    energy: false,
-                    seller: false,
-                    lab: false,
-                    amp: false
-                };
+                grid[x][y] = {building: false, id: 0};
             }
         }
     }
@@ -97,19 +94,36 @@ function renderGrid() {
 }
 
 /**
+ * Converts the given ID into the building it represents.
+ * @param {any} id The ID number stored on the grid cell.
+ */
+function IDtoBuilding(id) {
+    if (id == 1) {
+        return new EnergyCell();
+    } else if (id == 2) {
+        return new Seller();
+    } else if (id == 3) {
+        return new Lab();
+    } else if (id == 4) {
+        return new Amplifier();
+    } else {
+        return new class {
+            place() { }
+            buy() { }
+            sell() { }
+            icon() { }
+        };
+    }
+}
+
+/**
  * Renders all the placed buildings into the grid.
  */
 function renderBuildings() {
     for (var x = 0; x < grid.length; x++) {
         for (var y = 0; y < grid[x].length; y++) {
-            if (grid[x][y].energy) {
-                placeEnergyCell(x * 25, y * 25);
-            } else if (grid[x][y].seller) {
-                placeEnergySeller(x * 25, y * 25);
-            } else if (grid[x][y].lab) {
-                placeLab(x * 25, y * 25);
-            } else if (grid[x][y].amp) {
-                placeAmp(x * 25, y * 25);
+            if (grid[x][y].building) {
+                IDtoBuilding(grid[x][y].id).place(x * 25, y * 25);
             }
         }
     }
@@ -135,7 +149,7 @@ function renderBuildBar() {
     lab.onload = function () {
         context.drawImage(lab, canvasWidth - 130, 70);
     }
-    lab.src = "images/lab.png";
+    lab.src = "images/Lab.png";
     var amp = new Image();
     amp.onload = function () {
         context.drawImage(amp, canvasWidth - 105, 70);
@@ -160,7 +174,6 @@ function renderMarket() {
  * @param {any} event The location of the event.
  */
 var onClick = function (event) {
-    var canvasRect = canvas.getBoundingClientRect();
     // Get the grid indices from the clicked coordinate.
     var x = Math.floor((event.x - canvasRect.left) / 25);
     var y = Math.floor((event.y - canvasRect.top) / 25);
@@ -168,19 +181,7 @@ var onClick = function (event) {
     if (x < grid.length && y < grid[0].length && sellBuildingMode) {
         // Player clicked on grid while in sell building mode 
         context.clearRect(1 + x * cellSizeX, 1 + y * cellSizeY, 23, 23);
-        if (grid[x][y].energy) {
-            sellEnergyCell();
-            grid[x][y].energy = false;
-        } else if (grid[x][y].seller) {
-            sellEnergySeller();
-            grid[x][y].seller = false;
-        } else if (grid[x][y].lab) {
-            sellLab();
-            grid[x][y].lab = false;
-        } else if (grid[x][y].amp) {
-            sellAmp(x, y);
-            grid[x][y].amp = false;
-        }
+        IDtoBuilding(grid[x][y].id).sell(x, y);
         grid[x][y].building = false;
     } else if (x < grid.length && y < grid[0].length && !cellSelect && !grid[x][y].building) {
         // Player clicked on grid without nothing selected.
@@ -199,53 +200,33 @@ var onClick = function (event) {
     } else if (cellSelect) {
         // Player has selected a cell and clicked on building option.
         // Place a building on the selected cell and remove selection.
-        var energy = {
-            top: 70 + canvasRect.top,
-            bottom: 70 + cellSizeY + canvasRect.top,
-            left: canvasWidth - 180 + canvasRect.left,
-            right: canvasWidth - 180 + cellSizeX + canvasRect.left
-        }
-        var seller = {
-            top: 70 + canvasRect.top,
-            bottom: 70 + 25 + canvasRect.top,
-            left: canvasWidth - 155 + canvasRect.left,
-            right: canvasWidth - 155 + 25 + canvasRect.left
-        }
-        var lab = {
-            top: 70 + canvasRect.top,
-            bottom: 70 + 25 + canvasRect.top,
-            left: canvasWidth - 130 + canvasRect.left,
-            right: canvasWidth - 130 + 25 + canvasRect.left
-        }
-        var amp = {
-            top: 70 + canvasRect.top,
-            bottom: 70 + 25 + canvasRect.top,
-            left: canvasWidth - 105 + canvasRect.left,
-            right: canvasWidth - 105 + cellSizeX + canvasRect.left
-        }
+        var energy = IDtoBuilding(1).icon();
+        var seller = IDtoBuilding(2).icon();
+        var lab = IDtoBuilding(3).icon();
+        var amp = IDtoBuilding(4).icon();
         if (event.x>= energy.left && event.x <= energy.right && event.y>= energy.top && event.y <= energy.bottom) {
-            if (buyEnergyCell()) {
-                placeEnergyCell(cellSelectX * 25, cellSelectY * 25);
+            if (IDtoBuilding(1).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
-                grid[cellSelectX][cellSelectY].energy = true;
+                grid[cellSelectX][cellSelectY].id = 1;
+                IDtoBuilding(1).place(cellSelectX * 25, cellSelectY * 25);
             }
         } else if (event.x >= seller.left && event.x <= seller.right && event.y >= seller.top && event.y <= seller.bottom) {
-            if (buyEnergySeller()) {
-                placeEnergySeller(cellSelectX * 25, cellSelectY * 25);
+            if (IDtoBuilding(2).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
-                grid[cellSelectX][cellSelectY].seller = true;
+                grid[cellSelectX][cellSelectY].id = 2;
+                IDtoBuilding(2).place(cellSelectX * 25, cellSelectY * 25);
             }
         } else if (event.x >= lab.left && event.x <= lab.right && event.y >= lab.top && event.y <= lab.bottom) {
-            if (buyLab()) {
-                placeLab(cellSelectX * 25, cellSelectY * 25);
+            if (IDtoBuilding(3).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
-                grid[cellSelectX][cellSelectY].lab = true;
+                grid[cellSelectX][cellSelectY].id = 3;
+                IDtoBuilding(3).place(cellSelectX * 25, cellSelectY * 25);
             }
         } else if (event.x >= amp.left && event.x <= amp.right && event.y >= amp.top && event.y <= amp.bottom) {
-            if (buyAmp()) {
-                placeAmp(cellSelectX * 25, cellSelectY * 25);
+            if (IDtoBuilding(4).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
-                grid[cellSelectX][cellSelectY].amp = true;
+                grid[cellSelectX][cellSelectY].id = 4;
+                IDtoBuilding(4).place(cellSelectX * 25, cellSelectY * 25);
             }
         }
         cellSelect = false;
@@ -279,46 +260,27 @@ var onClick = function (event) {
  * @param {any} event
  */
 var onHover = function (event) {
-    var canvasRect = canvas.getBoundingClientRect();
-    var energyTop = 70 + canvasRect.top;
-    var energyBottom = 70 + 25 + canvasRect.top;
-    var energyLeft = canvasWidth - 180 + canvasRect.left;
-    var energyRight = canvasWidth - 180 + 25 + canvasRect.left;
-    var energySell = {
-        left: canvasWidth - 190 + canvasRect.left,
-        top: canvasHeight - 200 + canvasRect.top,
-        bottom: canvasHeight - 200 + 40 + canvasRect.top,
-        right: canvasWidth - 190 + 180 + canvasRect.left,
-    };
+    var energy = IDtoBuilding(1).icon();
+    var seller = IDtoBuilding(2).icon();
+    var lab = IDtoBuilding(3).icon();
+    var amp = IDtoBuilding(4).icon();
     var buildingSell = {
         left: canvasWidth - 190 + canvasRect.left,
         top: canvasHeight - 245 + canvasRect.top,
         bottom: canvasHeight - 245 + 40 + canvasRect.top,
         right: canvasWidth - 190 + 180 + canvasRect.left,
     };
-    var seller = {
-        top: 70 + canvasRect.top,
-        bottom: 70 + 25 + canvasRect.top,
-        left: canvasWidth - 155 + canvasRect.left,
-        right: canvasWidth - 155 + 25 + canvasRect.left,
-    }
-    var lab = {
-        top: 70 + canvasRect.top,
-        bottom: 70 + 25 + canvasRect.top,
-        left: canvasWidth - 130 + canvasRect.left,
-        right: canvasWidth - 130 + 25 + canvasRect.left,
-    }
-    var amp = {
-        top: 70 + canvasRect.top,
-        bottom: 70 + 25 + canvasRect.top,
-        left: canvasWidth - 105 + canvasRect.left,
-        right: canvasWidth - 105 + cellSizeX + canvasRect.left
-    }
+    var energySell = {
+        left: canvasWidth - 190 + canvasRect.left,
+        top: canvasHeight - 200 + canvasRect.top,
+        bottom: canvasHeight - 200 + 40 + canvasRect.top,
+        right: canvasWidth - 190 + 180 + canvasRect.left,
+    };
     if (sellBuildingMode) {
 
     } else if (event.x >= buildingSell.left && event.y >= buildingSell.top && event.x <= buildingSell.right && event.y <= buildingSell.bottom) {
         displayInformationText("Sell Buildings", "black");
-    } else if (event.x >= energyLeft && event.x <= energyRight && event.y >= energyTop && event.y <= energyBottom) {
+    } else if (event.x >= energy.left && event.x <= energy.right && event.y >= energy.top && event.y <= energy.bottom) {
         displayInformationText("Energy Cell\nCost: " + energyCellCost + "g\nProduces: 1e/s\nNo. of Cells: " + energyCellCount, "black");
     } else if (event.x >= seller.left && event.x <= seller.right && event.y >= seller.top && event.y <= seller.bottom) {
         displayInformationText("Energy Seller\nCost: " + energySellerCost + "g\nSells: 1e/s\nNo. of Sellers: " + energySellerCount, "black");
