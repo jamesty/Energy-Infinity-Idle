@@ -1,10 +1,11 @@
-﻿var research = 0;
+﻿var researchRate;
 
 function convertEnergy(amp) {
     if ((labCount + amp) * 2 <= totalEnergy) {
         research += labCount + amp;
         totalEnergy -= (amp + labCount) * 2;
     }
+	researchRate = labCount + amp;
 }
 
 function displayResearch() {

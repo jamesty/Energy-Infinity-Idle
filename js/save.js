@@ -1,62 +1,74 @@
 ﻿var reset = false;
 
 function saveGame() {
-    localStorage.gold = totalGold;
-    localStorage.energy = totalEnergy;
-    localStorage.research = research;
-    localStorage.energyCellCost = energyCellCost;
-    localStorage.sellerCost = energySellerCost;
-    localStorage.labCost = labCost;
-    localStorage.ampCost = ampCost
-    localStorage.energyCellCount = energyCellCount;
-    localStorage.sellerCount = energySellerCount;
-    localStorage.labCount = labCount;
-    localStorage.ampCount = ampCount;
-    localStorage.ampLoc = JSON.stringify(ampLocations);
-    localStorage.grid = JSON.stringify(grid);
+    var buildings = {
+        energyUpgrades: energyUpgrades,
+		energyUpgradeCost: energyUpgradeCost,
+        energyCellCost: energyCellCost,
+        energyCellCount: energyCellCount,
+        energySellerCost: energySellerCost,
+        energySellerCount: energySellerCount,
+		energySellerUpgrades: energySellerUpgrades,
+		energySellerUpgradeCost: energySellerUpgradeCost,
+        labCost: labCost,
+        labCount: labCount,
+        ampCost: ampCost,
+        ampCount: ampCount,
+        ampLocations: ampLocations
+    };
+    var convertedGrid = {}
+    for (var x = 0; x < grid.length; x++) {
+        convertedGrid[x] = grid[x];
+    }
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.open("POST", "save.php", false);
+    xmlhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xmlhttp.send("gold=" + totalGold + "&energy=" + totalEnergy +
+        "&research=" + research + "&buildings=" + JSON.stringify(buildings) + "&grid=" + JSON.stringify(convertedGrid));
 }
 
 function loadGame() {
-    if (localStorage.gold != null) {
-        totalGold = parseInt(localStorage.gold);
+    totalGold = savedGold;
+    totalEnergy = savedEnergy;
+    research = savedResearch;
+    if (typeof savedBuildings == "string") {
+        savedBuildings = JSON.parse(savedBuildings);
     }
-    if (localStorage.energy != null) {
-        totalEnergy = parseInt(localStorage.energy);
-    }
-    if (localStorage.research != null) {
-        research = parseInt(localStorage.research);
-    }
-    if (localStorage.ampCost != null) {
-        ampCost = parseInt(localStorage.ampCost);
-    }
-    if (localStorage.energyCellCost != null) {
-        energyCellCost = parseInt(localStorage.energyCellCost);
-    }
-    if (localStorage.sellerCost != null) {
-        energySellerCost = parseInt(localStorage.sellerCost);
-    }
-    if (localStorage.labCost != null) {
-        labCost = parseInt(localStorage.labCost);
-    }
-    if (localStorage.ampCount != null) {
-        ampCount = parseInt(localStorage.ampCount);
-    }
-    if (localStorage.energyCellCount != null) {
-        energyCellCount = parseInt(localStorage.energyCellCount);
-    }
-    if (localStorage.sellerCount != null) {
-        energySellerCount = parseInt(localStorage.sellerCount);
-    }
-    if (localStorage.labCount != null) {
-        labCount = parseInt(localStorage.labCount);
-    }
-    if (localStorage.ampLoc != null) {
-        ampLocations = JSON.parse(localStorage.ampLoc);
-    }
-    if (localStorage.grid != null) {
-        var storedGrid = JSON.parse(localStorage.grid);
+    energyUpgrades = savedBuildings.energyUpgrades;
+    energyCellCost = savedBuildings.energyCellCost;
+    energyCellCount = savedBuildings.energyCellCount;
+    energySellerCost = savedBuildings.energySellerCost;
+    energySellerCount = savedBuildings.energySellerCount;
+    labCost = savedBuildings.labCost;
+    labCount = savedBuildings.labCount;
+    ampCost = savedBuildings.ampCost;
+    ampCount = savedBuildings.ampCount;
+    ampLocations = savedBuildings.ampLocations;
+	
+	// Check if these values have been set on the database
+	if (savedBuildings.energyUpgradeCost == null) {
+		energyUpgradeCost = 500;
+	} else {
+		energyUpgradeCost = savedBuildings.energyUpgradeCost;
+	}
+	if (savedBuildings.energySellerUpgrades == null) {
+		energySellerUpgrades = 0;
+	} else {
+		energySellerUpgrades = savedBuildings.energySellerUpgrades;
+	}
+	
+	if (savedBuildings.energySellerUpgradeCost == null) {
+		energySellerUpgradeCost = 500;
+	} else {
+		energySellerUpgradeCost = savedBuildings.energySellerUpgradeCost;
+	}
+
+    if (savedGrid.length == 0) {
+        createGrid();
+    } else {
+        var storedGrid = savedGrid;
         grid = new Array(24);
-        for (var x = 0; x < storedGrid.length; x++) {
+        for (var x = 0; x < 24; x++) {
             grid[x] = storedGrid[x];
         }
     }
@@ -66,4 +78,15 @@ function resetGame() {
     reset = true;
     localStorage.clear();
     location.reload();
+}
+
+/**
+ * Checks if the object is empty.
+ */
+function isEmpty(obj) {
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key))
+            return false;
+    }
+    return true;
 }

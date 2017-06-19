@@ -12,6 +12,7 @@ var cellSelectX;
 var cellSelectY;
 
 var sellBuildingMode = false;
+var upgradeBar = false;
 
 /**
  * Initialize canvas and canvas contents.
@@ -24,7 +25,6 @@ function init() {
     canvasRect = canvas.getBoundingClientRect();
     // Check for a saved game and load it if available.
     loadGame();
-    createGrid();
     renderGrid();
     renderBuildings();
     renderBuildBar();
@@ -39,11 +39,7 @@ function init() {
 
     // Save the game if the user exits out of the game.
     window.onbeforeunload = function () {
-        if (typeof (Storage) !== "undefined" && !reset) {
-            saveGame();
-        } else {
-            alert("This browser does not support local storage.");
-        }
+        saveGame();
     }
 }
 
@@ -65,13 +61,12 @@ function gameTick() {
  */
 function createGrid() {
     // Initialize two-dimensional grid array if it does not exist.
-    if (grid == null) {
-        grid = new Array(24);
-        for (var x = 0; x < grid.length; x++) {
-            grid[x] = new Array(23);
-            for (var y = 0; y < grid[x].length; y++) {
-                grid[x][y] = {building: false, id: 0};
-            }
+    grid = new Array(24);
+	var l = grid.length;
+    for (var x = 0; x < l; x++) {
+        grid[x] = new Array(23);
+        for (var y = 0; y < grid[x].length; y++) {
+            grid[x][y] = {building: false, id: 0};
         }
     }
 }
@@ -107,6 +102,7 @@ function IDtoBuilding(id) {
     } else if (id == 4) {
         return new Amplifier();
     } else {
+        // Return empty class in case id is not a building.
         return new class {
             place() { }
             buy() { }
@@ -120,8 +116,10 @@ function IDtoBuilding(id) {
  * Renders all the placed buildings into the grid.
  */
 function renderBuildings() {
-    for (var x = 0; x < grid.length; x++) {
-        for (var y = 0; y < grid[x].length; y++) {
+	var gridl = grid.length;
+    for (var x = 0; x < gridl; x++) {
+		var gridxl = grid[x].length;
+        for (var y = 0; y < gridxl; y++) {
             if (grid[x][y].building) {
                 IDtoBuilding(grid[x][y].id).place(x * 25, y * 25);
             }
@@ -133,6 +131,7 @@ function renderBuildings() {
  * Renders the buildings side bar.
  */
 function renderBuildBar() {
+    context.clearRect(canvasWidth - 190, 0, 200, 200);
     context.font = "30px arial";
     context.strokeText("Buildings", canvasWidth - 160, 30);
     var energyCell = new Image();
@@ -155,7 +154,6 @@ function renderBuildBar() {
         context.drawImage(amp, canvasWidth - 105, 70);
     }
     amp.src = "images/Amp.png";
-
 }
 
 /**
@@ -163,9 +161,11 @@ function renderBuildBar() {
  */
 function renderMarket() {
     context.strokeStyle = "black";
+    context.strokeRect(canvasWidth - 190, canvasHeight - 290, 180, 40);
     context.strokeRect(canvasWidth - 190, canvasHeight - 245, 180, 40);
     context.strokeRect(canvasWidth - 190, canvasHeight - 200, 180, 40);
     context.font = "14px serif"
+    context.strokeText("Upgrades", canvasWidth - 180, canvasHeight - 270);
     context.strokeText("Sell Buildings", canvasWidth - 180, canvasHeight - 225);
 }
 
@@ -177,12 +177,19 @@ var onClick = function (event) {
     // Get the grid indices from the clicked coordinate.
     var x = Math.floor((event.x - canvasRect.left) / 25);
     var y = Math.floor((event.y - canvasRect.top) / 25);
+    var energy = new EnergyCell();
+    var seller = new Seller();
+    var lab = new Lab();
+    var amp = new Amplifier();
     // Check if player clicked on grid or other options.
     if (x < grid.length && y < grid[0].length && sellBuildingMode) {
-        // Player clicked on grid while in sell building mode 
-        context.clearRect(1 + x * cellSizeX, 1 + y * cellSizeY, 23, 23);
-        IDtoBuilding(grid[x][y].id).sell(x, y);
-        grid[x][y].building = false;
+        // Player clicked on grid while in sell building mode
+        // Check if the clicked grid contains any building.
+        if (grid[x][y].building == true) {
+            context.clearRect(1 + x * cellSizeX, 1 + y * cellSizeY, 23, 23);
+            IDtoBuilding(grid[x][y].id).sell(x, y);
+            grid[x][y].building = false;
+        }
     } else if (x < grid.length && y < grid[0].length && !cellSelect && !grid[x][y].building) {
         // Player clicked on grid without nothing selected.
         context.fillStyle = "yellow";
@@ -197,32 +204,28 @@ var onClick = function (event) {
         context.fillRect(1 + x * cellSizeX, 1 + y * cellSizeY, 23, 23);
         cellSelectX = x;
         cellSelectY = y;
-    } else if (cellSelect) {
+    } else if (cellSelect && !upgradeBar) {
         // Player has selected a cell and clicked on building option.
         // Place a building on the selected cell and remove selection.
-        var energy = IDtoBuilding(1).icon();
-        var seller = IDtoBuilding(2).icon();
-        var lab = IDtoBuilding(3).icon();
-        var amp = IDtoBuilding(4).icon();
-        if (event.x>= energy.left && event.x <= energy.right && event.y>= energy.top && event.y <= energy.bottom) {
+        if (energy.clicked(event.x, event.y)) {
             if (IDtoBuilding(1).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
                 grid[cellSelectX][cellSelectY].id = 1;
                 IDtoBuilding(1).place(cellSelectX * 25, cellSelectY * 25);
             }
-        } else if (event.x >= seller.left && event.x <= seller.right && event.y >= seller.top && event.y <= seller.bottom) {
+        } else if (seller.clicked(event.x, event.y)) {
             if (IDtoBuilding(2).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
                 grid[cellSelectX][cellSelectY].id = 2;
                 IDtoBuilding(2).place(cellSelectX * 25, cellSelectY * 25);
             }
-        } else if (event.x >= lab.left && event.x <= lab.right && event.y >= lab.top && event.y <= lab.bottom) {
+        } else if (lab.clicked(event.x, event.y)) {
             if (IDtoBuilding(3).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
                 grid[cellSelectX][cellSelectY].id = 3;
                 IDtoBuilding(3).place(cellSelectX * 25, cellSelectY * 25);
             }
-        } else if (event.x >= amp.left && event.x <= amp.right && event.y >= amp.top && event.y <= amp.bottom) {
+        } else if (amp.clicked(event.x, event.y)) {
             if (IDtoBuilding(4).buy()) {
                 grid[cellSelectX][cellSelectY].building = true;
                 grid[cellSelectX][cellSelectY].id = 4;
@@ -233,6 +236,13 @@ var onClick = function (event) {
         context.clearRect(1 + cellSelectX * cellSizeX, 1 + cellSelectY * cellSizeY, 23, 23);
         cellSelectX = null;
         cellSelectY = null;
+    } else if (upgradeBar) {
+		// User is in upgrade mode.
+        if (energy.clicked(event.x, event.y)) {
+            upgradeEnergyGenerators();
+        } else if (seller.clicked(event.x, event.y)) {
+			upgradeEnergySellers();
+		}
     }
 
     // If player clicked sell building mode or player wants to get out of mode.
@@ -253,6 +263,17 @@ var onClick = function (event) {
             displayInformationText("Sell building mode.\nClick any building to sell it.\nClick again to leave mode.", "black");
         }
     }
+
+    // If player clicked on upgrades button.
+    if (clickedUpgrade(event.x, event.y)) {
+        if (upgradeBar) {
+            renderBuildBar();
+            upgradeBar = false;
+        } else {
+            renderUpgrades();
+            upgradeBar = true;
+        }
+    }
 }
 
 /**
@@ -260,10 +281,10 @@ var onClick = function (event) {
  * @param {any} event
  */
 var onHover = function (event) {
-    var energy = IDtoBuilding(1).icon();
-    var seller = IDtoBuilding(2).icon();
-    var lab = IDtoBuilding(3).icon();
-    var amp = IDtoBuilding(4).icon();
+    var energy = new EnergyCell();
+    var seller = new Seller();
+    var lab = new Lab();
+    var amp = new Amplifier();
     var buildingSell = {
         left: canvasWidth - 190 + canvasRect.left,
         top: canvasHeight - 245 + canvasRect.top,
@@ -277,16 +298,30 @@ var onHover = function (event) {
         right: canvasWidth - 190 + 180 + canvasRect.left,
     };
     if (sellBuildingMode) {
-
+        // Displayed information is cancelled if player is in sell mode.
+    } else if (upgradeBar) {
+        // Display different information if player is in upgrade mode.
+        if (energy.clicked(event.x, event.y)) {
+            displayInformationText("Upgrade Energy Cells\nCost: " + energyUpgradeCost + "r\nCurrent: " + (energyUpgrades + 1)
+                + "e/s\nNext: " + (energyUpgrades + 2) + "e/s", "black");
+        } else if (seller.clicked(event.x, event.y)) {
+			displayInformationText("Upgrade Seller Cells\nCost: " + energySellerUpgradeCost + "r\nCurrent: " + (energySellerUpgrades + 1)
+                + "e/s\nNext: " + (energySellerUpgrades + 2) + "e/s", "black");
+		} else {
+            clearInfoBox();
+        }
     } else if (event.x >= buildingSell.left && event.y >= buildingSell.top && event.x <= buildingSell.right && event.y <= buildingSell.bottom) {
         displayInformationText("Sell Buildings", "black");
-    } else if (event.x >= energy.left && event.x <= energy.right && event.y >= energy.top && event.y <= energy.bottom) {
-        displayInformationText("Energy Cell\nCost: " + energyCellCost + "g\nProduces: 1e/s\nNo. of Cells: " + energyCellCount, "black");
-    } else if (event.x >= seller.left && event.x <= seller.right && event.y >= seller.top && event.y <= seller.bottom) {
-        displayInformationText("Energy Seller\nCost: " + energySellerCost + "g\nSells: 1e/s\nNo. of Sellers: " + energySellerCount, "black");
-    } else if (event.x >= lab.left && event.x <= lab.right && event.y >= lab.top && event.y <= lab.bottom) {
-        displayInformationText("Research Lab\nCost: " + labCost + "g\nResearches: 1r/s\nNo. of Labs: " + labCount, "black");
-    } else if (event.x >= amp.left && event.x <= amp.right && event.y >= amp.top && event.y <= amp.bottom) {
+    } else if (energy.clicked(event.x, event.y)) {
+        displayInformationText("Energy Cell\nCost: " + energyCellCost + "g\nProduces: 1e/s\nNo. of Cells: " + energyCellCount +
+								"\nCurrent rate: " + energyRate, "black");
+    } else if (seller.clicked(event.x, event.y)) {
+        displayInformationText("Energy Seller\nCost: " + energySellerCost + "g\nSells: 1e/s\nNo. of Sellers: " + energySellerCount +
+								"\nCurrent rate: " + goldRate, "black");
+    } else if (lab.clicked(event.x, event.y)) {
+        displayInformationText("Research Lab\nCost: " + labCost + "g\nResearches: 1r/s\nNo. of Labs: " + labCount +
+								"\nCurrent rate: " + researchRate, "black");
+    } else if (amp.clicked(event.x, event.y)) {
         displayInformationText("Amplifier\nCost: " + ampCost + "g\nAmplifies top and bottom \ncell.\nNo. of Amps: " + ampCount, "black");
     } else {
         clearInfoBox();

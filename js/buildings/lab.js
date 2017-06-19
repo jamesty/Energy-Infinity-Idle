@@ -1,7 +1,4 @@
-﻿var labCount = 0;
-var labCost = 50;
-
-class Lab {
+﻿class Lab {
     place(x, y) {
         var newLab = new Image();
         newLab.onload = function () {
@@ -36,5 +33,13 @@ class Lab {
             right: canvasWidth - 130 + 25 + canvasRect.left
         };
         return location;
+    }
+
+    clicked(x, y) {
+        var iconLoc = this.icon();
+        if (x >= iconLoc.left && y >= iconLoc.top && x <= iconLoc.right && y <= iconLoc.bottom) {
+            return true;
+        }
+        return false;
     }
 }

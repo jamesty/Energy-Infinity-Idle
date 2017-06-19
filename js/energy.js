@@ -1,5 +1,5 @@
-﻿var totalEnergy = 0;
-var prevEnergy = 0;
+﻿var energyRate;
+var goldRate;
 
 function displayEnergy() {
     // Clear the energy display before placing it in canvas.
@@ -10,14 +10,15 @@ function displayEnergy() {
 }
 
 function addEnergy(amp) {
-    prevEnergy = totalEnergy + amp;
-    totalEnergy += energyCellCount + amp;
+    totalEnergy += (energyCellCount + amp) * (energyUpgrades + 1);
+	energyRate = (energyCellCount + amp) * (energyUpgrades + 1);
 }
 
 function sellEnergy(amp) {
     if (energySellerCount + amp <= totalEnergy) {
-        totalEnergy -= energySellerCount + amp;
-        totalGold += energySellerCount + amp;
+        totalEnergy -= (energySellerCount + amp) * (energySellerUpgrades + 1);
+        totalGold += (energySellerCount + amp) * (energySellerUpgrades + 1);
+		goldRate = (energySellerCount + amp) * (energySellerUpgrades + 1);
         displayEnergy();
         displayGold();
     }

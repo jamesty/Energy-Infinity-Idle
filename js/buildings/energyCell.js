@@ -1,7 +1,4 @@
-﻿var energyCellCount = 0;
-var energyCellCost = 10;
-
-class EnergyCell {
+﻿class EnergyCell {
     place(x, y) {
         var newEnergyBuilding = new Image();
         newEnergyBuilding.onload = function () {
@@ -36,5 +33,13 @@ class EnergyCell {
             right: canvasWidth - 180 + 25 + canvasRect.left,
         };
         return location;
+    }
+
+    clicked(x, y) {
+        var iconLoc = this.icon();
+        if (x >= iconLoc.left && y >= iconLoc.top && x <= iconLoc.right && y <= iconLoc.bottom) {
+            return true;
+        }
+        return false;
     }
 }

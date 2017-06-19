@@ -1,5 +1,4 @@
-﻿var totalGold = 30;
-var prevGold = 30;
+﻿var prevGold = 30;
 
 function Gold() {
     this.display = displayGold;

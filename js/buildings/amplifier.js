@@ -1,19 +1,24 @@
-﻿var ampCount = 0;
-var ampCost = 500;
-var ampLocations = [];
-
-class Amplifier {
+﻿class Amplifier {
     place(x, y) {
         var newAmp = new Image();
         newAmp.onload = function () {
             context.drawImage(newAmp, x, y);
         }
         newAmp.src = "images/Amp.png";
-
-        ampLocations.push({ x: x / 25, y: y / 25 });
+		
+		var found = false;
+		var l = ampLocations.length;
+		for (var i = 0; i < l; i++) {
+			if (ampLocations[i].x == (x / 25) && ampLocations[i].y == (y / 25)) {
+				found = true;
+			}
+		}
+		if (!found) {
+			ampLocations.push({ x: x / 25, y: y / 25});
+		}
     }
 
-    buy() {
+    buy(x, y) {
         if (totalGold >= ampCost) {
             totalGold -= ampCost;
             ampCount += 1;
@@ -43,6 +48,14 @@ class Amplifier {
         };
         return location;
     }
+
+    clicked(x, y) {
+        var iconLoc = this.icon();
+        if (x >= iconLoc.left && y >= iconLoc.top && x <= iconLoc.right && y <= iconLoc.bottom) {
+            return true;
+        }
+        return false;
+    }
 }
 
 function amplifyCells() {
@@ -50,7 +63,8 @@ function amplifyCells() {
     var s = 0;
     var l = 0;
     // Check which type of buildings are on top or bottom.
-    for (var i = 0; i < ampLocations.length; i++) {
+	var l = ampLocations.length;
+    for (var i = 0; i < l; i++) {
         var gridX = ampLocations[i].x;
         var gridY = ampLocations[i].y;
         if (grid[gridX][gridY - 1].id == 1) {
