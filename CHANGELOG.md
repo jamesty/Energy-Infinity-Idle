@@ -1,4 +1,9 @@
 # Changelog
+## v1.0.3
+- Fixed amplifier amplifying research when it does not exist.
+- Added Battery building.
+- Energy will now max out depending on the number of batteries.
+- Saved variables updated.
 ## v1.0.2
 - Added energy and seller upgrades.
 - Gain rates will now display in the information box.
