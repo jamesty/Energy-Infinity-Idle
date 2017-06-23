@@ -10,6 +10,8 @@ function saveGame() {
         energySellerCount: energySellerCount,
 		energySellerUpgrades: energySellerUpgrades,
 		energySellerUpgradeCost: energySellerUpgradeCost,
+		batteryCount: batteryCount,
+		batteryCost: batteryCost,
         labCost: labCost,
         labCount: labCount,
         ampCost: ampCost,
@@ -61,6 +63,18 @@ function loadGame() {
 		energySellerUpgradeCost = 500;
 	} else {
 		energySellerUpgradeCost = savedBuildings.energySellerUpgradeCost;
+	}
+	
+	if (savedBuildings.batteryCount == null) {
+		batteryCount = 0;
+	} else {
+		batteryCount = savedBuildings.batteryCount;
+	}
+	
+	if (savedBuildings.batteryCost == null) {
+		batteryCost = 5;
+	} else {
+		batteryCost = savedBuildings.batteryCost;
 	}
 
     if (savedGrid.length == 0) {

@@ -25,12 +25,13 @@ function init() {
     canvasRect = canvas.getBoundingClientRect();
     // Check for a saved game and load it if available.
     loadGame();
+	displayMessages();
     renderGrid();
     renderBuildings();
     renderBuildBar();
     renderMarket();
-    displayEnergy();
     displayGold();
+    displayEnergy();
     displayResearch();
     renderInformationBox();
     canvas.addEventListener("click", onClick);
@@ -101,7 +102,9 @@ function IDtoBuilding(id) {
         return new Lab();
     } else if (id == 4) {
         return new Amplifier();
-    } else {
+    } else if (id == 5) {
+		return new Battery();
+	} else {
         // Return empty class in case id is not a building.
         return new class {
             place() { }
@@ -154,6 +157,11 @@ function renderBuildBar() {
         context.drawImage(amp, canvasWidth - 105, 70);
     }
     amp.src = "images/Amp.png";
+    var battery = new Image();
+    battery.onload = function () {
+        context.drawImage(battery, canvasWidth - 80, 70);
+    }
+    battery.src = "images/Battery.png";
 }
 
 /**
@@ -181,6 +189,7 @@ var onClick = function (event) {
     var seller = new Seller();
     var lab = new Lab();
     var amp = new Amplifier();
+	var battery = new Battery();
     // Check if player clicked on grid or other options.
     if (x < grid.length && y < grid[0].length && sellBuildingMode) {
         // Player clicked on grid while in sell building mode
@@ -231,7 +240,13 @@ var onClick = function (event) {
                 grid[cellSelectX][cellSelectY].id = 4;
                 IDtoBuilding(4).place(cellSelectX * 25, cellSelectY * 25);
             }
-        }
+        } else if (battery.clicked(event.x, event.y)) {
+			if (IDtoBuilding(5).buy()) {
+                grid[cellSelectX][cellSelectY].building = true;
+                grid[cellSelectX][cellSelectY].id = 5;
+                IDtoBuilding(5).place(cellSelectX * 25, cellSelectY * 25);
+			}
+		}
         cellSelect = false;
         context.clearRect(1 + cellSelectX * cellSizeX, 1 + cellSelectY * cellSizeY, 23, 23);
         cellSelectX = null;
@@ -285,6 +300,7 @@ var onHover = function (event) {
     var seller = new Seller();
     var lab = new Lab();
     var amp = new Amplifier();
+	var battery = new Battery();
     var buildingSell = {
         left: canvasWidth - 190 + canvasRect.left,
         top: canvasHeight - 245 + canvasRect.top,
@@ -323,7 +339,10 @@ var onHover = function (event) {
 								"\nCurrent rate: " + researchRate, "black");
     } else if (amp.clicked(event.x, event.y)) {
         displayInformationText("Amplifier\nCost: " + ampCost + "g\nAmplifies top and bottom \ncell.\nNo. of Amps: " + ampCount, "black");
-    } else {
+    } else if (battery.clicked(event.x, event.y)) {
+		displayInformationText("Battery\c Cost: " + batteryCost + "g\nIncreases energy capacity\nby 1000.\nNo. of Batteries: " +
+								batteryCount, "black");
+	} else {
         clearInfoBox();
     }
 }

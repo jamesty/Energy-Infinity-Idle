@@ -63,8 +63,8 @@ function amplifyCells() {
     var s = 0;
     var l = 0;
     // Check which type of buildings are on top or bottom.
-	var l = ampLocations.length;
-    for (var i = 0; i < l; i++) {
+	var length = ampLocations.length;
+    for (var i = 0; i < length; i++) {
         var gridX = ampLocations[i].x;
         var gridY = ampLocations[i].y;
         if (grid[gridX][gridY - 1].id == 1) {

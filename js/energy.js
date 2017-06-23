@@ -6,11 +6,16 @@ function displayEnergy() {
     context.clearRect(100, canvasHeight - 20, 200, 20);
     context.font = "14px arial";
     context.fillStyle = "black";
-    context.fillText("Energy: " + totalEnergy, 100, canvasHeight - 10);
+    context.fillText("Energy: " + totalEnergy + "/" + (batteryCount * 1000), 100, canvasHeight - 10);
 }
 
 function addEnergy(amp) {
-    totalEnergy += (energyCellCount + amp) * (energyUpgrades + 1);
+	var newEnergy = (energyCellCount + amp) * (energyUpgrades + 1);
+	if (totalEnergy + newEnergy >= 1000 * batteryCount) {
+		totalEnergy = (1000 * batteryCount) + 1;
+	} else {
+		totalEnergy += newEnergy;
+	}
 	energyRate = (energyCellCount + amp) * (energyUpgrades + 1);
 }
 
